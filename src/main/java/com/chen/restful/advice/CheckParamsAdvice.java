@@ -47,14 +47,14 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
     public Object afterBodyRead(Object body, HttpInputMessage inputMessage, MethodParameter parameter, Type targetType, Class<? extends HttpMessageConverter<?>> converterType) {
 
-        handCheckParams(body, parameter);
+        handleCheckParams(body, parameter);
 
-        handCheckParam(body, parameter);
+        handleCheckParam(body, parameter);
 
         return body;
     }
 
-    private void handCheckParam(Object body, MethodParameter parameter) {
+    private void handleCheckParam(Object body, MethodParameter parameter) {
 
         CheckParam[] methodAnnotations = parameter.getMethod().getAnnotationsByType(CheckParam.class);
         if (methodAnnotations != null && methodAnnotations.length > 0) {
@@ -116,7 +116,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
     }
 
     //处理复杂注解
-    private void handCheckParams(Object body, MethodParameter parameter) {
+    private void handleCheckParams(Object body, MethodParameter parameter) {
 
         CheckParams[] methodAnnotations = parameter.getMethod().getAnnotationsByType(CheckParams.class);
 
@@ -250,7 +250,6 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                                         throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, propertyName + "不能为空字符");
                                     }
                                 }
-                                break;
                             case NOT_NULL:
                                 if (property == null) {
                                     throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "需要校验的参数'" + propertyName + "'不存在，请提交参数后再试");

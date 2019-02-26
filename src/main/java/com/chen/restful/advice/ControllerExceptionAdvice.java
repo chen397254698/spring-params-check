@@ -43,9 +43,7 @@ public class ControllerExceptionAdvice {
         String methodName = stackTrace[0].getMethodName();
         int lineNumber = stackTrace[0].getLineNumber();
 
-        if (stackTrace.length > 0) {
-            des = "错误发生在文件：" + fileName + " ,方法名为： " + methodName + " ,行数为： " + lineNumber;
-        }
+        des = "错误发生在文件：" + fileName + " ,方法名为： " + methodName + " ,行数为： " + lineNumber;
 
         return ErrorResult.INS(ResponseCode.ERROR, "exception: " + e.toString()
                 + ", message: " + e.getMessage()
