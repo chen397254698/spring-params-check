@@ -1,6 +1,8 @@
 package com.chen.restful.advice;
 
 
+import com.chen.restful.annotation.Condition;
+import com.chen.restful.enums.ConditionType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
@@ -60,6 +62,11 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
         if (methodAnnotations != null && methodAnnotations.length > 0) {
             for (CheckParam methodAnnotation : methodAnnotations) {
 
+                Condition[] conditions = methodAnnotation.conditions();
+
+                //判断参数校验的执行条件是否满足
+                if (!handleConditions(body, conditions)) continue;
+
                 String propertyName = methodAnnotation.propertyName();
 
                 if (propertyName.length() > 0) {
@@ -76,11 +83,11 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                         property = BeanUtil.getProperty(body, propertyName);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "指定校验属性'" + propertyName + "'不存在，请开发人员检查指定校验的参数名是否有误");
+                        throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "指定校验属性'" + propertyName + "'不存在，请开发人员检查指定校验的参数名是否有误");
                     }
 
                     if (checkType != CheckType.NULL_ABLE && property == null) {
-                        throw BaseException.INS(ResponseCode.ERROR_MISS_PARAM, "需要校验的参数'" + propertyName + "'不存在，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
+                        throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "需要校验的参数'" + propertyName + "'不存在，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
                     } else if (property != null && regExpression.length() > 0) {
                         Pattern pattern = Pattern.compile(regExpression);
                         Matcher matcher = pattern.matcher(property.toString());
@@ -89,7 +96,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                         if (matches) {
                             continue;
                         } else {
-                            throw BaseException.INS(ResponseCode.ERROR_MISS_PARAM, "需要校验的参数'" + propertyName + "'不符合校验正则表达式" + regExpression + "，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
+                            throw BaseException.INS(ResponseCode.FAIL_WRONG_PARAM, "需要校验的参数'" + propertyName + "'不符合校验正则表达式" + regExpression + "，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
                         }
                     }
 
@@ -123,6 +130,11 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
         if (methodAnnotations != null && methodAnnotations.length > 0) {
 
             for (CheckParams methodAnnotation : methodAnnotations) {
+
+                Condition[] conditions = methodAnnotation.conditions();
+
+                //判断参数校验的执行条件是否满足
+                if (!handleConditions(body, conditions)) continue;
 
                 Set<String> checkParamsNameSet = new HashSet<>();
 
@@ -261,6 +273,51 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                 }
             }
         }
+    }
+
+    private boolean handleConditions(Object body, Condition[] conditions) {
+
+        for (Condition condition : conditions) {
+
+            Object property = null;
+
+            String key = condition.key();
+            String regEx = condition.regEx();
+            ConditionType conditionType = condition.conditionType();
+            try {
+                property = BeanUtil.getProperty(body, key);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            if (property == null) {
+                if (conditionType != ConditionType.NULL) return false;
+            } else if (!Condition.BLANK_REGEX.equals(regEx)) {
+                if (conditionType == ConditionType.NULL) {
+                    return false;
+                } else if (conditionType == ConditionType.EMPTY) {
+                    if (!((property instanceof String && ((String) property).length() == 0)
+                            || (property instanceof List && ((List) property).size() <= 0))) {
+                        return false;
+                    }
+                } else if (conditionType == ConditionType.NOT_EMPTY) {
+                    if (((property instanceof String && ((String) property).length() == 0)
+                            || (property instanceof List && ((List) property).size() <= 0))) {
+                        return false;
+                    }
+                }
+            } else {
+                Pattern pattern = Pattern.compile(regEx);
+                Matcher matcher = pattern.matcher(property.toString());
+                boolean matches = matcher.matches();
+                if (!matches) {
+                    return false;
+                }
+            }
+
+        }
+
+        return true;
     }
 
 }

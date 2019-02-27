@@ -4,6 +4,7 @@ package com.chen.restful.annotation;
 import com.chen.restful.enums.CheckType;
 
 import java.lang.annotation.*;
+import java.util.Map;
 
 /**
  * Created by chen on 2017/8/14.
@@ -40,4 +41,12 @@ public @interface CheckParams {
      * @return
      */
     CheckType checkType() default CheckType.NOT_NULL;
+
+
+    /**
+     * 触发校验的条件，默认无条件触发
+     * @return
+     */
+    Condition[] conditions() default {};
+
 }

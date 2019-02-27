@@ -39,4 +39,12 @@ public @interface CheckParam {
      * @return
      */
     CheckType checkType() default CheckType.NOT_NULL;
+
+    /**
+     * 触发校验的条件，默认无条件触发
+     * @return
+     */
+    Condition[] conditions() default {};
+
+
 }
