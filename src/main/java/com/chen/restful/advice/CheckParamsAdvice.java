@@ -95,7 +95,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                     } else if (property != null && (regExpression.length() > 0 || range.length() > 0)) {
 
                         if (range.length() > 0) {
-                            if (!checkRange(range, property)) {
+                            if (!checkRange(range, property, propertyName, true)) {
                                 throw BaseException.INS(ResponseCode.FAIL_WRONG_PARAM, "需要校验的参数'" + propertyName + "'不在区间：" + range + "内，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
                             }
                         }
@@ -332,7 +332,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
             }
 
             if (range.length() > 0 && property != null) {
-                if (!checkRange(range, property)) {
+                if (!checkRange(range, property, key, false)) {
                     return false;
                 }
             }
@@ -342,7 +342,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
         return true;
     }
 
-    public boolean checkRange(@NotNull String range, @NotNull Object property) {
+    public boolean checkRange(@NotNull String range, @NotNull Object property, String propertyName, boolean throwExce) {
 
         Float value = null;
 
@@ -351,11 +351,15 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
         } catch (NumberFormatException e) {
             e.printStackTrace();
-            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "判断rang参数不是数字参数，无法做范围判断，请开后台发人员检查指定校验的参数是否有误");
+            if (throwExce) {
+                throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "判断rang参数:" + propertyName + "不是数字参数，无法做范围判断，请开后台发人员检查指定校验的参数是否有误");
+            }else {
+                return false;
+            }
         }
 
         if (range.length() < 3) {
-            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的参数名是否有误");
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的rang是否有误");
         }
 
         String rangePattern = "^([\\[\\(])([0-9]*|[\\*]?),([0-9]*|[\\*]?)([\\]\\)])$";
@@ -364,7 +368,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
         Matcher matcher = pattern.matcher(range.replaceAll(" ", ""));
 
         if (!matcher.matches()) {
-            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的参数名是否有误");
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的rang是否有误");
         } else {
 
             String start = "[";
