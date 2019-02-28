@@ -344,14 +344,14 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
     public boolean checkRange(@NotNull String range, @NotNull Object property) {
 
-        Integer value = null;
+        Float value = null;
 
         try {
-            value = Integer.parseInt(property.toString().trim());
+            value = Float.parseFloat(property.toString().trim());
 
         } catch (NumberFormatException e) {
             e.printStackTrace();
-            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "判断rang参数不是整形参数，无法做范围判断，请开后台发人员检查指定校验的参数是否有误");
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "判断rang参数不是数字参数，无法做范围判断，请开后台发人员检查指定校验的参数是否有误");
         }
 
         if (range.length() < 3) {
@@ -382,7 +382,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
             if (left != null) {
                 try {
-                    int l = Integer.parseInt(left);
+                    float l = Float.parseFloat(left);
 
                     if ("[".equals(start)) {
                         if (value < l) return false;
@@ -396,7 +396,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
             if (right != null) {
                 try {
-                    int r = Integer.parseInt(right);
+                    float r = Float.parseFloat(right);
 
                     if ("]".equals(end)) {
                         if (value > r) return false;
