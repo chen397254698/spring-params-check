@@ -292,7 +292,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
             if (property == null) {
                 if (conditionType != ConditionType.NULL) return false;
-            } else if (!Condition.BLANK_REGEX.equals(regEx)) {
+            } else if (Condition.BLANK_REGEX.equals(regEx)) {
                 if (conditionType == ConditionType.NULL) {
                     return false;
                 } else if (conditionType == ConditionType.EMPTY) {

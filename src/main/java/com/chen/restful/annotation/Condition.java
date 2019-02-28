@@ -17,7 +17,7 @@ import java.lang.annotation.*;
 @Inherited
 public @interface Condition {
 
-    String BLANK_REGEX = "<^&*^&_blank_regex_*^(%>";
+    String BLANK_REGEX = "<^&*^&_blank_regex_*^%>";
 
     /**
      * 判断条件的参数名，只能指定简单对象。否则不生效
