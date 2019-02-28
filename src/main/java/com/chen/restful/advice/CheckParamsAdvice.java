@@ -3,10 +3,12 @@ package com.chen.restful.advice;
 
 import com.chen.restful.annotation.Condition;
 import com.chen.restful.enums.ConditionType;
+import com.sun.istack.internal.NotNull;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpInputMessage;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.RequestBodyAdvice;
 import com.chen.restful.annotation.CheckParam;
@@ -79,27 +81,39 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
                     String regExpression = methodAnnotation.regEx();
 
+                    String range = methodAnnotation.range();
+
                     try {
                         property = BeanUtil.getProperty(body, propertyName);
                     } catch (Exception e) {
                         e.printStackTrace();
-                        throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "指定校验属性'" + propertyName + "'不存在，请开发人员检查指定校验的参数名是否有误");
+                        throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "指定校验属性'" + propertyName + "'不存在，请开后台发人员检查指定校验的参数名是否有误");
                     }
 
                     if (checkType != CheckType.NULL_ABLE && property == null) {
                         throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "需要校验的参数'" + propertyName + "'不存在，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
-                    } else if (property != null && regExpression.length() > 0) {
-                        Pattern pattern = Pattern.compile(regExpression);
-                        Matcher matcher = pattern.matcher(property.toString());
-                        boolean matches = matcher.matches();
+                    } else if (property != null && (regExpression.length() > 0 || range.length() > 0)) {
 
-                        if (matches) {
-                            continue;
-                        } else {
-                            throw BaseException.INS(ResponseCode.FAIL_WRONG_PARAM, "需要校验的参数'" + propertyName + "'不符合校验正则表达式" + regExpression + "，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
+                        if (range.length() > 0) {
+                            if (!checkRange(range, property)) {
+                                throw BaseException.INS(ResponseCode.FAIL_WRONG_PARAM, "需要校验的参数'" + propertyName + "'不在区间：" + range + "内，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
+                            }
                         }
-                    }
 
+                        if (regExpression.length() > 0) {
+
+                            Pattern pattern = Pattern.compile(regExpression);
+                            Matcher matcher = pattern.matcher(property.toString());
+                            boolean matches = matcher.matches();
+
+                            if (matches) {
+                                continue;
+                            } else {
+                                throw BaseException.INS(ResponseCode.FAIL_WRONG_PARAM, "需要校验的参数'" + propertyName + "'不符合校验正则表达式" + regExpression + "，参数'" + propertyName + "'描述：" + description + ",请提交参数后再试");
+                            }
+                        }
+
+                    }
 
                     switch (checkType) {
                         case NOT_EMPTY:
@@ -223,7 +237,7 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                                     property = BeanUtil.getProperty(body, propertyName);
                                 } catch (Exception e) {
                                     e.printStackTrace();
-                                    throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "指定校验属性'" + propertyName + "'不存在，请开发人员检查指定校验的参数名是否有误");
+                                    throw BaseException.INS(ResponseCode.FAIL_MISS_PARAM, "指定校验属性'" + propertyName + "'不存在，请开后台发人员检查指定校验的参数名是否有误");
                                 }
 
                                 if (checkType != CheckType.NULL_ABLE && property == null) {
@@ -284,6 +298,8 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
             String key = condition.key();
             String regEx = condition.regEx();
             ConditionType conditionType = condition.conditionType();
+            String range = condition.range();
+
             try {
                 property = BeanUtil.getProperty(body, key);
             } catch (Exception e) {
@@ -315,9 +331,87 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
                 }
             }
 
+            if (range.length() > 0 && property != null) {
+                if (!checkRange(range, property)) {
+                    return false;
+                }
+            }
+
         }
 
         return true;
+    }
+
+    public boolean checkRange(@NotNull String range, @NotNull Object property) {
+
+        Integer value = null;
+
+        try {
+            value = Integer.parseInt(property.toString().trim());
+
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "判断rang参数不是整形参数，无法做范围判断，请开后台发人员检查指定校验的参数是否有误");
+        }
+
+        if (range.length() < 3) {
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的参数名是否有误");
+        }
+
+        String rangePattern = "^([\\[\\(])([0-9]*|[\\*]?),([0-9]*|[\\*]?)([\\]\\)])$";
+
+        Pattern pattern = Pattern.compile(rangePattern);
+        Matcher matcher = pattern.matcher(range.replaceAll(" ", ""));
+
+        if (!matcher.matches()) {
+            throw BaseException.INS(ResponseCode.ERROR_WRONG_PARAM, "rang参数指定有误，请开后台发人员检查指定校验的参数名是否有误");
+        } else {
+
+            String start = "[";
+            String end = "]";
+
+            String left = null;
+            String right = null;
+
+            if (matcher.groupCount() > 0) {
+                start = matcher.group(1);
+                left = matcher.group(2) != null ? matcher.group(2) : null;
+                right = matcher.group(3) != null ? matcher.group(3) : null;
+                end = matcher.group(4);
+            }
+
+            if (left != null) {
+                try {
+                    int l = Integer.parseInt(left);
+
+                    if ("[".equals(start)) {
+                        if (value < l) return false;
+                    } else {
+                        if (value <= l) return false;
+                    }
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            if (right != null) {
+                try {
+                    int r = Integer.parseInt(right);
+
+                    if ("]".equals(end)) {
+                        if (value > r) return false;
+                    } else {
+                        if (value >= r) return false;
+                    }
+                } catch (NumberFormatException e) {
+                    e.printStackTrace();
+                }
+            }
+
+        }
+
+        return true;
+
     }
 
 }

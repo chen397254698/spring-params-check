@@ -35,6 +35,13 @@ public @interface CheckParam {
     String description() default "";
 
     /**
+     * 数字参数范围如：(1,10),(1,10],[1,10]，无穷用*表示:如[1,*]
+     * @return
+     */
+    String range() default "";
+
+
+    /**
      * 校验类型
      * @return
      */

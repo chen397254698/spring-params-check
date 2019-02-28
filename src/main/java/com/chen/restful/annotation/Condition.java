@@ -34,6 +34,12 @@ public @interface Condition {
     String regEx() default BLANK_REGEX;
 
     /**
+     * 数字参数范围如：(1,10),(1,10],[1,10]，无穷用*,或空字符表示:如[1,*]，[1,]
+     * @return
+     */
+    String range() default "";
+
+    /**
      * 条件校验类型，判断条件在正则之后
      * @return
      */
