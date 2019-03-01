@@ -175,11 +175,9 @@ public class CheckParamsAdvice implements RequestBodyAdvice {
 
                 }
 
-                List<String> exceptPropertiesNameList = new ArrayList<>();
-
                 String[] exceptPropertiesName = methodAnnotation.exceptPropertiesName();
 
-                exceptPropertiesNameList.addAll(Arrays.asList(exceptPropertiesName));
+                List<String> exceptPropertiesNameList = new ArrayList<>(Arrays.asList(exceptPropertiesName));
 
                 checkParamsNameSet.removeAll(exceptPropertiesNameList);
 
